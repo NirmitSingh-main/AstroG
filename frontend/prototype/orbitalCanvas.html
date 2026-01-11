@@ -1,75 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Asteroid Orbit Simulation</title>
+  <meta charset="UTF-8" />
+  <title>AstroGuard – Physics-Based Orbit Simulation</title>
+
   <style>
     body {
       margin: 0;
       background: black;
       overflow: hidden;
+      color: white;
+      font-family: Arial, sans-serif;
     }
+
     canvas {
       display: block;
+    }
+
+    .label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 14px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
 
+<div class="label">
+  AstroGuard – Physics-Based Elliptical Orbits
+</div>
+
 <canvas id="orbitCanvas"></canvas>
 
 <script>
+  // =========================
+  // Canvas setup
+  // =========================
   const canvas = document.getElementById("orbitCanvas");
   const ctx = canvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
 
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
+  const cx = () => canvas.width / 2;
+  const cy = () => canvas.height / 2;
 
+  // =========================
   // Earth
-  const earthRadius = 20;
-
-  // Asteroid object
-  const asteroid = {
-    radius: 180,
-    angle: 0,
-    speed: 0.01,
-    size: 5,
-    
+  // =========================
+  const earth = {
+    radius: 20,
+    color: "deepskyblue"
   };
 
+  // =========================
+  // Physics constants (scaled)
+  // =========================
+  const GRAVITY_SCALE = 0.15; // controls overall speed
+
+  // =========================
+  // Asteroids (elliptical orbits)
+  // =========================
+  const asteroids = [];
+  const ASTEROID_COUNT = 18;
+
+  for (let i = 0; i < ASTEROID_COUNT; i++) {
+    const a = 120 + Math.random() * 300;   // semi-major axis
+    const b = a * (0.6 + Math.random() * 0.3); // semi-minor axis
+
+    asteroids.push({
+      a,
+      b,
+      angle: Math.random() * Math.PI * 2,
+      size: 3 + Math.random() * 3,
+      color: "white"
+    });
+  }
+
+  // =========================
+  // Draw Earth
+  // =========================
   function drawEarth() {
     ctx.beginPath();
-    ctx.arc(cx, cy, earthRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "blue";
+    ctx.arc(cx(), cy(), earth.radius, 0, Math.PI * 2);
+    ctx.fillStyle = earth.color;
     ctx.fill();
   }
 
-  function drawAsteroid() {
-    const x = cx + asteroid.radius * Math.cos(asteroid.angle);
-    const y = cy + asteroid.radius * Math.sin(asteroid.angle);
+  // =========================
+  // Draw & update asteroids
+  // =========================
+  function drawAsteroids() {
+    asteroids.forEach(a => {
+      // Elliptical position
+      const x = cx() + a.a * Math.cos(a.angle);
+      const y = cy() + a.b * Math.sin(a.angle);
 
-    ctx.beginPath();
-    ctx.arc(x, y, asteroid.size, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
-    ctx.fill();
+      // Distance from Earth
+      const dx = x - cx();
+      const dy = y - cy();
+      const r = Math.sqrt(dx * dx + dy * dy);
+
+      // Physics-based speed (closer = faster)
+      const speed = GRAVITY_SCALE / Math.sqrt(r);
+
+      // Draw asteroid
+      ctx.beginPath();
+      ctx.arc(x, y, a.size, 0, Math.PI * 2);
+      ctx.fillStyle = a.color;
+      ctx.fill();
+
+      // Advance along orbit
+      a.angle += speed;
+    });
   }
 
-  function update() {
+  // =========================
+  // Animation loop
+  // =========================
+  function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawEarth();
-    drawAsteroid();
-    drawAsteroid();
+    drawAsteroids();
 
-
-    asteroid.angle += asteroid.speed;
-
-    requestAnimationFrame(update);
+    requestAnimationFrame(animate);
   }
 
-  update();
+  animate();
 </script>
 
 </body>
